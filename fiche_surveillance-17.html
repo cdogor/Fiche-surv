@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>FSP – Fiche Surveillance</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<style>
+:root{
+  --ink:#1a1a2e;--ink2:#4a4a6a;--rule:#d0d0e0;--rule2:#eaeaf4;
+  --acc:#0057b8;--acc2:#e8f0fb;--ok:#237804;--ok2:#f0faf0;--okb:#b7eb8f;
+  --warn:#d4380d;--warn2:#fff0ee;--warnb:#ffc8b8;
+  --amb:#7c5200;--amb2:#fffbe6;--ambb:#ffe58f;
+  --bg:#f0f0eb;--paper:#fff;--stripe:#f7f7fb;
+  --r:5px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:14px;background:var(--bg);color:var(--ink);-webkit-tap-highlight-color:transparent;}
+
+/* ── TOOLBAR ── */
+#tb{
+  position:sticky;top:0;z-index:200;
+  background:var(--ink);border-bottom:3px solid var(--acc);
+  display:flex;align-items:center;gap:6px;padding:8px 12px;
+  overflow-x:auto;scrollbar-width:none;
+}
+#tb::-webkit-scrollbar{display:none;}
+.tb-logo{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:#fff;letter-spacing:.12em;white-space:nowrap;flex-shrink:0;}
+.tb-logo em{color:var(--acc);font-style:normal;}
+.tb-sp{flex:1;min-width:4px;}
+.tb-ref{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:var(--acc);background:#fff2;border-radius:3px;padding:3px 8px;white-space:nowrap;max-width:140px;overflow:hidden;text-overflow:ellipsis;cursor:pointer;border:1px solid #fff2;}
+#tb-status{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6fcf97;opacity:0;transition:opacity .4s;white-space:nowrap;flex-shrink:0;}
+#tb-status.show{opacity:1;}
+.tbtn{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;border:none;border-radius:3px;padding:6px 10px;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+#btn-new{background:#ffffff18;color:#fff;}
+#btn-save{background:#29a84525;color:#6fcf97;border:1px solid #6fcf9740;}
+#btn-load{background:#29a84525;color:#6fcf97;border:1px solid #6fcf9740;}
+#btn-pdf{background:var(--acc);color:#fff;}
+#file-in{display:none;}
+
+/* ── WRAP ── */
+.wrap{max-width:860px;margin:16px auto 60px;padding:0 10px;}
+
+/* ── CARDS / SECTIONS ── */
+.card{background:var(--paper);border:1px solid var(--rule);border-radius:var(--r);margin-bottom:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+
+/* collapsible section head */
+.sh{
+  display:flex;align-items:center;gap:8px;
+  padding:10px 14px;cursor:pointer;user-select:none;
+  background:var(--ink);color:#fff;
+  font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;
+  transition:background .15s;
+}
+.sh:active{background:#2a2a4a;}
+.sh.blue{background:#0a1f3a;}.sh.green{background:#0d2b0d;}.sh.red{background:#2e0808;}.sh.amber{background:#2e1f00;}
+.sh .num{background:var(--acc);border-radius:2px;padding:1px 6px;font-size:9px;flex-shrink:0;}
+.sh .sh-title{flex:1;}
+.sh .caret{font-size:14px;transition:transform .25s;flex-shrink:0;}
+.sh.open .caret{transform:rotate(90deg);}
+.sh-badge{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;background:#fff2;color:#ffffffaa;flex-shrink:0;}
+.sh-badge.ok{background:var(--ok2);color:var(--ok);}
+
+.sec-body{display:none;padding:14px;}
+.sec-body.open{display:block;}
+
+/* doc header always open */
+.doc-head{display:flex;align-items:stretch;border-bottom:2px solid var(--ink);}
+.dh-accent{width:44px;background:var(--acc);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.dh-accent span{font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:700;color:#fff;writing-mode:vertical-rl;transform:rotate(180deg);letter-spacing:.15em;}
+.dh-title{flex:1;padding:12px 14px;border-right:1px solid var(--rule);}
+.dh-title h1{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;text-transform:uppercase;line-height:1.4;}
+.dh-title .sub{font-size:11px;color:var(--ink2);margin-top:3px;font-family:'IBM Plex Mono',monospace;}
+.dh-ref{width:160px;padding:10px 12px;display:flex;flex-direction:column;gap:5px;background:var(--stripe);flex-shrink:0;}
+.ref-row{display:flex;flex-direction:column;gap:2px;}
+.ref-row label,.fl{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;color:var(--ink2);letter-spacing:.1em;text-transform:uppercase;}
+.ref-num-wrap{display:flex;gap:4px;align-items:center;}
+.ref-pfx{width:50px!important;font-weight:700;}
+.ref-num{flex:1;background:var(--stripe)!important;cursor:default;}
+.ref-regen{background:none;border:none;cursor:pointer;font-size:14px;padding:0;line-height:1;color:var(--acc);}
+
+/* ── FORM FIELDS ── */
+.fg{display:flex;flex-direction:column;gap:3px;margin-bottom:10px;}
+.fg:last-child{margin-bottom:0;}
+.fg label{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;color:var(--ink2);letter-spacing:.09em;text-transform:uppercase;}
+input[type=text],input[type=date],input[type=time],input[type=number],textarea,select{
+  font-family:'IBM Plex Sans',sans-serif;font-size:14px;color:var(--ink);
+  background:var(--paper);border:1px solid var(--rule);border-radius:3px;
+  padding:8px 10px;width:100%;outline:none;
+  transition:border-color .15s,box-shadow .15s;
+  -webkit-appearance:none;
+}
+input:focus,textarea:focus,select:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(0,87,184,.12);}
+textarea{resize:vertical;min-height:52px;line-height:1.5;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+@media(max-width:520px){.grid2,.grid3{grid-template-columns:1fr 1fr;}}
+
+/* ── RADIO/CHECK PILLS ── */
+.pill-group{display:flex;gap:6px;flex-wrap:wrap;}
+.pill{display:flex;align-items:center;gap:5px;padding:6px 12px;border:1px solid var(--rule);border-radius:20px;cursor:pointer;font-size:13px;font-weight:500;user-select:none;transition:all .12s;}
+.pill:active{transform:scale(.97);}
+.pill input{display:none;}
+.pill.active-ok{background:var(--ok2);border-color:var(--okb);color:var(--ok);font-weight:700;}
+.pill.active-ko{background:var(--warn2);border-color:var(--warnb);color:var(--warn);font-weight:700;}
+.pill.active-na{background:var(--stripe);border-color:var(--rule2);color:var(--ink2);}
+.pill.active-def{background:var(--acc2);border-color:var(--acc);color:var(--acc);font-weight:700;}
+
+/* ── CTRL TABLE ── */
+.ctrl-tbl{width:100%;border-collapse:collapse;margin-bottom:10px;font-size:13px;}
+.ctrl-tbl th{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink2);padding:7px 10px;background:var(--stripe);border:1px solid var(--rule);text-align:left;}
+.ctrl-tbl th.c{text-align:center;}
+.ctrl-tbl td{padding:8px 10px;border:1px solid var(--rule);vertical-align:middle;}
+.ctrl-tbl tr:nth-child(even) td{background:var(--stripe);}
+.ctrl-tbl .ynb{display:flex;justify-content:center;gap:5px;}
+.yn-btn{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;border:1px solid var(--rule);border-radius:3px;padding:3px 8px;cursor:pointer;background:var(--paper);color:var(--ink2);transition:all .12s;min-width:36px;text-align:center;}
+.yn-btn:active{transform:scale(.95);}
+.yn-btn.ok{background:var(--ok);border-color:var(--ok);color:#fff;}
+.yn-btn.ko{background:var(--warn);border-color:var(--warn);color:#fff;}
+.yn-btn.na{background:var(--rule);border-color:var(--rule);color:var(--ink);}
+
+/* ── DIFFS CHECKBOXES ── */
+.diff-wrap{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;}
+.diff-other{display:flex;align-items:center;gap:8px;}
+
+/* ── ZONES ── */
+.zone-card{border:1px solid var(--rule);border-radius:var(--r);overflow:hidden;margin-bottom:10px;animation:zin .18s ease;}
+@keyframes zin{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
+.zc-head{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--ink);color:#fff;cursor:pointer;user-select:none;}
+.zc-head .znum{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;background:var(--acc);border-radius:2px;padding:2px 7px;flex-shrink:0;}
+.zc-head .ztitle{flex:1;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.06em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.zc-head .zcaret{font-size:13px;transition:transform .2s;flex-shrink:0;}
+.zc-head.open .zcaret{transform:rotate(90deg);}
+.zc-del{background:none;border:none;color:#ff8888;font-size:18px;cursor:pointer;padding:0;line-height:1;flex-shrink:0;}
+.zc-body{display:none;padding:12px;}
+.zc-body.open{display:block;}
+.zmini{display:flex;flex-direction:column;gap:2px;}
+.zmini label{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;color:var(--ink2);letter-spacing:.08em;text-transform:uppercase;}
+.zrow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;}
+.zrow4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:10px;}
+@media(max-width:520px){.zrow,.zrow4{grid-template-columns:1fr 1fr;}}
+.zdiv{border-top:1px dashed var(--rule2);margin:10px 0;display:flex;align-items:center;gap:8px;}
+.zdiv span{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;color:var(--ink2);letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;}
+.z-add-btn{display:flex;align-items:center;justify-content:center;gap:6px;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--acc);background:var(--acc2);border:1px dashed var(--acc);border-radius:var(--r);padding:10px;cursor:pointer;width:100%;transition:background .12s;}
+.z-add-btn:active{background:#d4e6fb;}
+.zone-summary{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ink2);padding:4px 0 0;display:flex;gap:10px;flex-wrap:wrap;}
+.badge{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:10px;font-size:9px;font-weight:700;}
+.b1{background:var(--warn2);color:var(--warn);border:1px solid var(--warnb);}
+.b2{background:var(--amb2);color:var(--amb);border:1px solid var(--ambb);}
+.b3{background:var(--ok2);color:var(--ok);border:1px solid var(--okb);}
+.ba{background:var(--warn2);color:var(--warn);border:1px solid var(--warnb);}
+
+/* ── ANOMALIES ── */
+.anom-list{display:flex;flex-direction:column;gap:6px;margin-bottom:8px;}
+.anom-item{background:var(--warn2);border:1px solid var(--warnb);border-radius:var(--r);padding:9px 10px;position:relative;}
+.anom-item .anom-num{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;color:var(--warn);margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;}
+.anom-del{background:none;border:none;color:var(--warn);cursor:pointer;font-size:16px;line-height:1;padding:0;}
+.anom-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+@media(max-width:520px){.anom-grid{grid-template-columns:1fr;}}
+.anom-add{display:flex;align-items:center;gap:6px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--warn);background:var(--warn2);border:1px dashed var(--warnb);border-radius:4px;padding:7px 10px;cursor:pointer;width:100%;}
+
+/* ── PHOTOS ── */
+.photo-wrap{margin-top:4px;}
+.photo-grid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;}
+.photo-thumb{position:relative;width:90px;height:72px;border:1px solid var(--rule);border-radius:4px;overflow:hidden;background:var(--stripe);cursor:pointer;}
+.photo-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+.photo-cap{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.55);color:#fff;font-size:9px;padding:2px 4px;font-family:'IBM Plex Mono',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.photo-del{position:absolute;top:2px;right:2px;background:rgba(212,56,13,.85);border:none;border-radius:2px;color:#fff;font-size:12px;width:18px;height:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;line-height:1;}
+.photo-add{width:90px;height:72px;border:1px dashed var(--acc);border-radius:4px;background:var(--acc2);color:var(--acc);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;font-size:22px;transition:background .12s;}
+.photo-add span{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;}
+.photo-add:active{background:#d4e6fb;}
+.photo-in{display:none;}
+#lightbox{display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.9);align-items:center;justify-content:center;flex-direction:column;gap:10px;}
+#lightbox.open{display:flex;}
+#lightbox img{max-width:94vw;max-height:82vh;border-radius:4px;}
+#lb-close{position:fixed;top:14px;right:16px;color:#fff;font-size:30px;cursor:pointer;background:none;border:none;line-height:1;}
+#lb-cap{color:#ffffffbb;font-family:'IBM Plex Mono',monospace;font-size:11px;text-align:center;padding:0 20px;}
+
+/* ── GPS ── */
+.gps-list{display:flex;flex-direction:column;gap:5px;margin-bottom:8px;}
+.gps-row{display:grid;grid-template-columns:auto 100px 100px 1fr auto;gap:5px;align-items:center;background:var(--stripe);border:1px solid var(--rule);border-radius:4px;padding:6px 8px;}
+@media(max-width:520px){.gps-row{grid-template-columns:auto 1fr 1fr;gap:4px;}
+  .gps-lbl{grid-column:1/4;}
+}
+.gps-idx{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;color:var(--acc);min-width:24px;}
+.gps-del{background:none;border:1px solid var(--rule);border-radius:3px;color:var(--warn);font-size:13px;cursor:pointer;padding:0;width:26px;height:26px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.gps-actions{display:flex;gap:6px;margin-top:4px;}
+.gps-add-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;background:var(--acc2);color:var(--acc);border:1px dashed var(--acc);border-radius:4px;padding:7px;cursor:pointer;transition:background .12s;}
+.gps-locate{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;background:var(--ok2);color:var(--ok);border:1px solid var(--okb);border-radius:4px;padding:7px;cursor:pointer;transition:background .12s;}
+.gps-copy{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--acc);cursor:pointer;text-decoration:underline;background:none;border:none;padding:0;}
+
+.zone-del-btn{width:100%;margin-top:12px;padding:10px;background:none;border:1px solid var(--warnb);border-radius:4px;color:var(--warn);font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;cursor:pointer;transition:background .12s;}
+.zone-del-btn:active{background:var(--warn2);}
+
+/* ── AVIS FINAL ── */
+.avis-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:0;}
+.avis-btn{flex:1;min-width:120px;padding:12px 8px;border:2px solid var(--rule);border-radius:4px;text-align:center;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;transition:all .15s;background:var(--paper);color:var(--ink2);}
+.avis-btn.a-ok{border-color:var(--ok);background:var(--ok2);color:var(--ok);}
+.avis-btn.a-rem{border-color:var(--amb);background:var(--amb2);color:var(--amb);}
+.avis-btn.a-ko{border-color:var(--warn);background:var(--warn2);color:var(--warn);}
+
+hr.div{border:none;border-top:1px solid var(--rule2);margin:10px 0;}
+
+/* ── PRINT ── */
+@media print{
+  @page{size:A4;margin:11mm 11mm 13mm;}
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
+  #tb,#lightbox{display:none!important;}
+  body{background:#fff;font-size:11px;}
+  .wrap{max-width:100%;margin:0;padding:0;}
+  .card{box-shadow:none;margin-bottom:8px;page-break-inside:avoid;}
+  .sh .caret,.zc-head .zcaret{display:none;}
+  .sec-body,.zc-body{display:block!important;}
+  .zc-del,.photo-del,.photo-add,.anom-add,.gps-add-btn,.gps-locate,.gps-del,.zone-del-btn{display:none!important;}
+  .photo-thumb{width:70px;height:56px;}
+  input,textarea,select{border:none;border-bottom:1px solid #aaa;border-radius:0;padding:2px 4px;background:transparent!important;}
+  .gps-row{padding:3px 6px;}
+}
+</style>
+</head>
+<body>
+
+<!-- LIGHTBOX -->
+<div id="lightbox">
+  <button id="lb-close">✕</button>
+  <img id="lb-img" src="" alt="">
+  <div id="lb-cap"></div>
+</div>
+
+<!-- TOOLBAR -->
+<div id="tb">
+  <div class="tb-logo">EDF <em>·</em> FSP</div>
+  <div class="tb-ref" id="tb-ref" title="Réf. fiche">—</div>
+  <div class="tb-sp"></div>
+  <span id="tb-status"></span>
+  <button class="tbtn" id="btn-new">+ Nouveau</button>
+  <button class="tbtn" id="btn-save">💾</button>
+  <button class="tbtn" id="btn-load">📂</button>
+  <input type="file" id="file-in" accept=".json">
+  <button class="tbtn" id="btn-pdf">🖨</button>
+</div>
+
+<div class="wrap">
+
+<!-- ── EN-TÊTE DOCUMENT ── -->
+<div class="card">
+  <div class="doc-head">
+    <div class="dh-accent"><span>EDF</span></div>
+    <div class="dh-title">
+      <h1>Fiche Journalière de Surveillance Prestataire</h1>
+      <div class="sub">Mesures acoustiques — Surveillance canal</div>
+    </div>
+    <div class="dh-ref">
+      <div class="ref-row">
+        <label>Réf. fiche</label>
+        <div class="ref-num-wrap">
+          <input type="text" id="ref-pfx" class="ref-pfx" placeholder="FSP" maxlength="8" title="Préfixe (ex. FSP, CAP…)">
+          <span style="color:var(--ink2);font-family:monospace">-</span>
+          <input type="text" id="ref-num" class="ref-num" readonly>
+          <button class="ref-regen" id="btn-regen" title="Nouveau n°">↺</button>
+        </div>
+      </div>
+      <div class="ref-row">
+        <label>Source PK</label>
+        <select id="ref-source-pk">
+          <option value="">—</option>
+          <option value="terrain">Levé terrain GPS</option>
+          <option value="plan">Plan / SIG</option>
+          <option value="repere">Repères existants</option>
+          <option value="autre">Autre</option>
+        </select>
+      </div>
+      <div class="ref-row" id="ref-source-autre-row" style="display:none">
+        <label>Préciser</label>
+        <input type="text" id="ref-source-autre" placeholder="ex. BDD interne">
+      </div>
+      <div class="ref-row">
+        <label>Réf. doc PK</label>
+        <input type="text" id="ref-doc-pk" placeholder="Plan-AZ-045">
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── 01 INFOS GÉNÉRALES ── -->
+<div class="card">
+  <div class="sh open" data-sec="s01"><span class="num">01</span><span class="sh-title">Informations générales</span><span class="caret">›</span></div>
+  <div class="sec-body open" id="s01">
+    <div class="grid3">
+      <div class="fg"><label>Date</label><input type="date" id="date"></div>
+      <div class="fg"><label>Site / Canal</label><input type="text" id="site" placeholder="Canal de Provence"></div>
+      <div class="fg"><label>Secteur / PK</label><input type="text" id="secteur" placeholder="PK 12+500"></div>
+      <div class="fg"><label>Surveillant EDF</label><input type="text" id="surveillant"></div>
+      <div class="fg"><label>Prestataire</label><input type="text" id="prestataire"></div>
+      <div class="fg"><label>Chef d'équipe</label><input type="text" id="chef-equipe"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── 02 PRÉSENCE & MOYENS ── -->
+<div class="card">
+  <div class="sh blue" data-sec="s02"><span class="num">02</span><span class="sh-title">Présence & Moyens</span><span class="caret">›</span></div>
+  <div class="sec-body" id="s02">
+    <div class="fg">
+      <label>Personnel prévu</label>
+      <div class="pill-group" id="pg-personnel">
+        <label class="pill"><input type="radio" name="personnel" value="ok"> ✔ Conforme</label>
+        <label class="pill"><input type="radio" name="personnel" value="ko"> ✖ Non conforme</label>
+      </div>
+    </div>
+    <div class="fg"><label>Observations personnel</label><textarea id="obs-personnel" rows="2"></textarea></div>
+    <hr class="div">
+    <div class="fg">
+      <label>Matériel prévu</label>
+      <div class="pill-group" id="pg-materiel">
+        <label class="pill"><input type="radio" name="materiel" value="ok"> ✔ Conforme</label>
+        <label class="pill"><input type="radio" name="materiel" value="ko"> ✖ Non conforme</label>
+      </div>
+    </div>
+    <div class="fg"><label>Observations matériel</label><textarea id="obs-materiel" rows="2"></textarea></div>
+  </div>
+</div>
+
+<!-- ── 03 SÉCURITÉ ── -->
+<div class="card">
+  <div class="sh red" data-sec="s03"><span class="num">03</span><span class="sh-title">Sécurité</span><span class="caret">›</span></div>
+  <div class="sec-body" id="s03">
+    <table class="ctrl-tbl" id="tbl-sec">
+      <thead><tr><th style="width:56%">Point contrôlé</th><th class="c">Oui</th><th class="c">Non</th><th class="c">N/A</th></tr></thead>
+      <tbody>
+        <tr data-key="epi"><td>Port des EPI</td><td class="c"><div class="ynb"></div></td><td></td><td></td></tr>
+        <tr data-key="analyse"><td>Analyse de risque réalisée</td><td class="c"><div class="ynb"></div></td><td></td><td></td></tr>
+        <tr data-key="balisage"><td>Balisage conforme</td><td class="c"><div class="ynb"></div></td><td></td><td></td></tr>
+        <tr data-key="comm"><td>Moyens de communication</td><td class="c"><div class="ynb"></div></td><td></td><td></td></tr>
+        <tr data-key="prevention"><td>Respect plan de prévention</td><td class="c"><div class="ynb"></div></td><td></td><td></td></tr>
+      </tbody>
+    </table>
+    <div class="fg"><label>Commentaires sécurité</label><textarea id="com-sec" rows="2"></textarea></div>
+  </div>
+</div>
+
+<!-- ── 04 MESURES ACOUSTIQUES ── -->
+<div class="card">
+  <div class="sh green" data-sec="s04"><span class="num">04</span><span class="sh-title">Mesures acoustiques — Contrôle</span><span class="caret">›</span></div>
+  <div class="sec-body" id="s04">
+    <table class="ctrl-tbl" id="tbl-acou">
+      <thead><tr><th style="width:56%">Contrôle</th><th class="c">Oui</th><th class="c">Non</th><th class="c">N/A</th></tr></thead>
+      <tbody>
+        <tr data-key="zone-inv"><td>Zone prévue investiguée</td><td class="c"><div class="ynb"></div></td><td></td><td></td></tr>
+        <tr data-key="proc"><td>Procédure respectée</td><td class="c"><div class="ynb"></div></td><td></td><td></td></tr>
+        <tr data-key="pos"><td>Positionnement des points conforme</td><td class="c"><div class="ynb"></div></td><td></td><td></td></tr>
+        <tr data-key="enreg"><td>Enregistrement des données conforme</td><td class="c"><div class="ynb"></div></td><td></td><td></td></tr>
+      </tbody>
+    </table>
+    <div class="fg"><label>Commentaires mesures</label><textarea id="com-acou" rows="2"></textarea></div>
+  </div>
+</div>
+
+<!-- ── 05 ÉCARTS ── -->
+<div class="card">
+  <div class="sh red" data-sec="s05"><span class="num">05</span><span class="sh-title">Écarts / Non-conformités</span><span class="caret">›</span></div>
+  <div class="sec-body" id="s05">
+    <div class="fg">
+      <div class="pill-group" id="pg-ecarts">
+        <label class="pill"><input type="radio" name="ecarts" value="aucun"> ✔ Aucun</label>
+        <label class="pill"><input type="radio" name="ecarts" value="oui"> ⚠ Oui</label>
+      </div>
+    </div>
+    <div id="ecarts-detail" style="display:none">
+      <div class="fg"><label>Description</label><textarea id="ecarts-desc" rows="3"></textarea></div>
+      <div class="fg"><label>Action corrective</label><textarea id="action-corrective" rows="2"></textarea></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── 06 DIFFICULTÉS ── -->
+<div class="card">
+  <div class="sh amber" data-sec="s06"><span class="num">06</span><span class="sh-title">Difficultés rencontrées</span><span class="caret">›</span></div>
+  <div class="sec-body" id="s06">
+    <div class="diff-wrap" id="diff-checks">
+      <label class="pill" data-val="aucune"><input type="checkbox"> Aucune</label>
+      <label class="pill" data-val="acces"><input type="checkbox"> Accès difficile</label>
+      <label class="pill" data-val="meteo"><input type="checkbox"> Météo</label>
+      <label class="pill" data-val="bruit"><input type="checkbox"> Bruit ambiant</label>
+      <label class="pill" data-val="eau"><input type="checkbox"> Niveau d'eau</label>
+    </div>
+    <div class="diff-other">
+      <label class="pill" id="diff-autre-lbl" data-val="autre"><input type="checkbox"> Autre :</label>
+      <input type="text" id="diff-autre-txt" placeholder="Préciser…" style="flex:1">
+    </div>
+  </div>
+</div>
+
+<!-- ── 07 ZONES RÉALISÉES ── -->
+<div class="card">
+  <div class="sh green" data-sec="s07"><span class="num">07</span><span class="sh-title">Zones réalisées</span><span class="sh-badge" id="zone-badge">0 zone</span><span class="caret">›</span></div>
+  <div class="sec-body" id="s07">
+    <div id="zone-list"></div>
+    <button class="z-add-btn" id="btn-add-zone">＋ Ajouter une zone</button>
+    <div class="zone-summary" id="zone-summary" style="margin-top:8px"></div>
+  </div>
+</div>
+
+<!-- ── 08 SYNTHÈSE ── -->
+<div class="card">
+  <div class="sh" data-sec="s08"><span class="num">08</span><span class="sh-title">Synthèse du surveillant</span><span class="caret">›</span></div>
+  <div class="sec-body" id="s08">
+    <div class="fg">
+      <textarea id="synthese" rows="5" placeholder="Résumé de la journée, points notables, recommandations…"></textarea>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ink2);text-align:right;margin-top:3px" id="syn-count">0 car.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── 09 AVIS ── -->
+<div class="card">
+  <div class="sh" data-sec="s09"><span class="num">09</span><span class="sh-title">Avis de surveillance</span><span class="caret">›</span></div>
+  <div class="sec-body" id="s09">
+    <div class="avis-row" id="avis-row">
+      <div class="avis-btn" data-avis="ok">✔ Conforme</div>
+      <div class="avis-btn" data-avis="rem">⚠ Avec remarques</div>
+      <div class="avis-btn" data-avis="ko">✖ Non conforme</div>
+    </div>
+    <hr class="div">
+    <div class="grid2">
+      <div class="fg"><label>Nom surveillant</label><input type="text" id="visa-surv"></div>
+      <div class="fg"><label>Validation heure</label><input type="time" id="visa-heure"></div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
+<script>
+'use strict';
+
+// ═══════════════════════════════════
+//  STATE
+// ═══════════════════════════════════
+const ynState   = {};   // key → 'oui'|'non'|'na'|null
+const radios    = {};   // name → value
+const diffChecks = new Set();
+let   avis      = null;
+let   zones     = [];
+let   zIdCtr    = 0;
+
+// ═══════════════════════════════════
+//  COLLAPSIBLE SECTIONS
+// ═══════════════════════════════════
+document.querySelectorAll('.sh[data-sec]').forEach(sh => {
+  sh.addEventListener('click', () => {
+    const body = document.getElementById(sh.dataset.sec);
+    const open = sh.classList.toggle('open');
+    body.classList.toggle('open', open);
+    sh.querySelector('.caret').style.transform = open ? 'rotate(90deg)' : '';
+  });
+});
+// zone card toggle
+function toggleZoneCard(head) {
+  const open = head.classList.toggle('open');
+  head.nextElementSibling.classList.toggle('open', open);
+}
+
+// ═══════════════════════════════════
+//  YES/NO TABLE BUTTONS
+// ═══════════════════════════════════
+const ynItems = [
+  {key:'epi',tbl:'tbl-sec'},{key:'analyse',tbl:'tbl-sec'},{key:'balisage',tbl:'tbl-sec'},
+  {key:'comm',tbl:'tbl-sec'},{key:'prevention',tbl:'tbl-sec'},
+  {key:'zone-inv',tbl:'tbl-acou'},{key:'proc',tbl:'tbl-acou'},
+  {key:'pos',tbl:'tbl-acou'},{key:'enreg',tbl:'tbl-acou'}
+];
+ynItems.forEach(({key, tbl}) => {
+  const row = document.querySelector(`#${tbl} tr[data-key="${key}"]`);
+  if (!row) return;
+  ynState[key] = null;
+  const cells = row.querySelectorAll('td');
+  [['oui','ok'],['non','ko'],['na','na']].forEach(([val, cls], i) => {
+    const btn = document.createElement('button');
+    btn.className = 'yn-btn';
+    btn.textContent = val === 'oui' ? 'Oui' : val === 'non' ? 'Non' : 'N/A';
+    btn.dataset.val = val;
+    btn.addEventListener('click', () => setYN(key, ynState[key] === val ? null : val));
+    cells[i+1].querySelector('.ynb')?.appendChild(btn);
+    if (!cells[i+1].querySelector('.ynb')) cells[i+1].appendChild(btn);
+  });
+});
+
+function setYN(key, val) {
+  ynState[key] = val;
+  const row = document.querySelector(`tr[data-key="${key}"]`);
+  if (!row) return;
+  row.querySelectorAll('.yn-btn').forEach(b => {
+    b.classList.remove('ok','ko','na');
+    if (b.dataset.val === val) b.classList.add(val === 'oui' ? 'ok' : val === 'non' ? 'ko' : 'na');
+  });
+}
+
+// ═══════════════════════════════════
+//  PILL RADIOS
+// ═══════════════════════════════════
+function initPillGroup(groupId) {
+  document.querySelectorAll(`#${groupId} .pill`).forEach(p => {
+    p.addEventListener('click', () => {
+      document.querySelectorAll(`#${groupId} .pill`).forEach(x => x.classList.remove('active-ok','active-ko','active-def'));
+      const inp = p.querySelector('input');
+      const val = inp.value;
+      radios[inp.name] = val;
+      p.classList.add(val === 'ok' ? 'active-ok' : val === 'ko' ? 'active-ko' : 'active-def');
+    });
+  });
+}
+['pg-personnel','pg-materiel','pg-ecarts'].forEach(initPillGroup);
+
+document.querySelectorAll('#pg-ecarts .pill').forEach(p => {
+  p.addEventListener('click', () => {
+    const val = p.querySelector('input').value;
+    document.getElementById('ecarts-detail').style.display = val === 'oui' ? 'block' : 'none';
+  });
+});
+
+// ═══════════════════════════════════
+//  DIFF CHECKBOXES
+// ═══════════════════════════════════
+document.querySelectorAll('#diff-checks .pill, #diff-autre-lbl').forEach(p => {
+  p.addEventListener('click', () => {
+    const val = p.dataset.val;
+    if (diffChecks.has(val)) { diffChecks.delete(val); p.classList.remove('active-def'); }
+    else {
+      if (val === 'aucune') {
+        document.querySelectorAll('[data-val]:not([data-val="aucune"])').forEach(x => { x.classList.remove('active-def'); diffChecks.delete(x.dataset.val); });
+      } else {
+        const an = document.querySelector('[data-val="aucune"]');
+        if (an) { an.classList.remove('active-def'); diffChecks.delete('aucune'); }
+      }
+      diffChecks.add(val); p.classList.add('active-def');
+    }
+  });
+});
+
+// ═══════════════════════════════════
+//  SYNTHÈSE COUNTER
+// ═══════════════════════════════════
+document.getElementById('synthese').addEventListener('input', function() {
+  document.getElementById('syn-count').textContent = this.value.length + ' car.';
+});
+
+// ═══════════════════════════════════
+//  AVIS FINAL
+// ═══════════════════════════════════
+document.querySelectorAll('.avis-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.avis-btn').forEach(b => b.classList.remove('a-ok','a-rem','a-ko'));
+    avis = btn.dataset.avis;
+    btn.classList.add(avis === 'ok' ? 'a-ok' : avis === 'rem' ? 'a-rem' : 'a-ko');
+  });
+});
+
+// ═══════════════════════════════════
+//  LIGHTBOX
+// ═══════════════════════════════════
+function openLB(src, cap) {
+  document.getElementById('lb-img').src = src;
+  document.getElementById('lb-cap').textContent = cap || '';
+  document.getElementById('lightbox').classList.add('open');
+}
+document.getElementById('lb-close').addEventListener('click', () => document.getElementById('lightbox').classList.remove('open'));
+document.getElementById('lightbox').addEventListener('click', e => { if (e.target === e.currentTarget) document.getElementById('lightbox').classList.remove('open'); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') document.getElementById('lightbox').classList.remove('open'); });
+
+// ═══════════════════════════════════
+//  AUTO-RÉFÉRENCE (base datetime)
+// ═══════════════════════════════════
+const PFX_KEY = 'fsp_pfx';
+function getPfx() { return (localStorage.getItem(PFX_KEY) || 'FSP').toUpperCase(); }
+function savePfx(p) { localStorage.setItem(PFX_KEY, p.trim().toUpperCase() || 'FSP'); }
+function buildRef(pfx) {
+  const now = new Date();
+  const d = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
+  const t = `${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
+  return `${pfx}-${d}-${t}`;
+}
+function setRef(val) {
+  document.getElementById('ref-num').value = val;
+  document.getElementById('tb-ref').textContent = val;
+}
+function initRef() {
+  const pfx = getPfx();
+  document.getElementById('ref-pfx').value = pfx;
+  if (!document.getElementById('ref-num').value) setRef(buildRef(pfx));
+}
+document.getElementById('ref-pfx').addEventListener('change', function() {
+  savePfx(this.value);
+  // update prefix part only, keep current datetime suffix
+  const cur = document.getElementById('ref-num').value;
+  const parts = cur.split('-');
+  const newRef = parts.length >= 3 ? `${getPfx()}-${parts.slice(1).join('-')}` : buildRef(getPfx());
+  setRef(newRef);
+});
+document.getElementById('btn-regen').addEventListener('click', () => setRef(buildRef(getPfx())));
+document.getElementById('ref-source-pk').addEventListener('change', function() {
+  document.getElementById('ref-source-autre-row').style.display = this.value === 'autre' ? 'flex' : 'none';
+});
+
+// ═══════════════════════════════════
+//  ZONES
+// ═══════════════════════════════════
+const PRIO = {'1':'🔴 P1','2':'🟡 P2','3':'🟢 P3'};
+const QUAL = {bon:'✔ Bon',moyen:'~ Moyen',faible:'✖ Faible'};
+
+function makeZone(z) {
+  const card = document.createElement('div');
+  card.className = 'zone-card';
+  card.dataset.zid = z.id;
+
+  // ── HEAD (sans bouton supprimer) ──
+  const head = document.createElement('div');
+  head.className = 'zc-head';
+  head.innerHTML = `<span class="znum">Z${z._idx}</span><span class="ztitle">${zTitle(z)}</span><span class="zcaret">›</span>`;
+  card.appendChild(head);
+  head.addEventListener('click', () => toggleZoneCard(head));
+
+  // ── BODY ──
+  const body = document.createElement('div');
+  body.className = 'zc-body';
+  card.appendChild(body);
+
+  // row 1 : PK début / fin / opérateur / H début / H fin
+  addRow(body, [
+    field('PK début','z-pk-deb','text',z.pk_deb,'12+500'),
+    field('PK fin','z-pk-fin','text',z.pk_fin,'13+200'),
+    field('Opérateur','z-op','text',z.op,'Nom Prénom'),
+  ], 'zrow');
+  addRow(body, [
+    field('PK GPS début','z-pk-gps-deb','text',z.pk_gps_deb,'ex. 12+500 repère GPS'),
+    field('PK GPS fin','z-pk-gps-fin','text',z.pk_gps_fin,'ex. 13+200 repère GPS'),
+  ], 'grid2');
+  addRow(body, [
+    field('Heure début','z-h-deb','time',z.h_deb,''),
+    field('Heure fin','z-h-fin','time',z.h_fin,''),
+    selField('Priorité','z-prio',{'1':'🔴 Priorité 1','2':'🟡 Priorité 2','3':'🟢 Priorité 3'},z.prio),
+  ], 'zrow');
+
+  // row 2 : qualité / dB / présence surveillant
+  addRow(body, [
+    selField('Qualité mesure','z-qual',{'':'—',bon:'✔ Bon',moyen:'~ Moyen',faible:'✖ Faible'},z.qual),
+    field('Niveau moy. (dB)','z-db','text',z.db,'42.5'),
+    selField('Présence surv.','z-pres',{'oui':'✔ Oui',partiel:'~ Partiel',non:'✖ Non'},z.pres),
+  ], 'zrow');
+
+  // SÉPARATEUR CONDITIONS
+  div(body,'📡 Conditions de mesure');
+  addRow(body, [
+    selField('Météo','z-meteo',{'':'—',beau:'☀ Beau',nuageux:'⛅ Nuageux',vent:'💨 Vent',pluie:'🌧 Pluie',brouillard:'🌫 Brouillard'},z.meteo),
+    selField('Vent','z-vent',{'':'—',calme:'Calme',faible:'Faible',modere:'Modéré',fort:'Fort'},z.vent),
+    selField('Bruit ambiant','z-bruit',{'':'—',faible:'Faible',moyen:'Moyen',fort:'Fort — gênant'},z.bruit),
+  ], 'zrow');
+  addRow(body, [
+    selField('Niveau eau','z-eau',{'':'—',normal:'Normal',bas:'Bas',haut:'Haut',agite:'Agité'},z.eau),
+    selField('Accès berge','z-acces',{'':'—',libre:'Libre',partiel:'Partiel',difficile:'Difficile',impossible:'Impossible'},z.acces),
+  ], 'grid2');
+  addTextarea(body,'Remarques conditions','z-cond-rem',z.cond_rem||'','Précisions…');
+
+  // SÉPARATEUR ANOMALIES
+  div(body,'⚠ Anomalies');
+  const anomList = document.createElement('div');
+  anomList.className = 'anom-list';
+  body.appendChild(anomList);
+  function renderAnoms() {
+    anomList.innerHTML = '';
+    (z.anoms||[]).forEach((a, ai) => {
+      const item = document.createElement('div');
+      item.className = 'anom-item';
+      item.innerHTML = `
+        <div class="anom-num">⚠ Anomalie #${ai+1}
+          <button class="anom-del" data-ai="${ai}">×</button>
+        </div>
+        <div class="anom-grid">
+          <div class="fg"><label>PK approx.</label><input type="text" class="a-pk" placeholder="13+050" value="${a.pk||''}"></div>
+          <div class="fg"><label>Nature</label><input type="text" class="a-nature" placeholder="Fuite, déformation…" value="${a.nature||''}"></div>
+          <div class="fg"><label>Sévérité</label><select class="a-sev">
+            <option value="">—</option>
+            <option value="faible" ${a.sev==='faible'?'selected':''}>🟢 Faible</option>
+            <option value="modere" ${a.sev==='modere'?'selected':''}>🟡 Modérée</option>
+            <option value="grave"  ${a.sev==='grave' ?'selected':''}>🔴 Grave</option>
+          </select></div>
+          <div class="fg"><label>Commentaire</label><input type="text" class="a-com" placeholder="Observations…" value="${a.com||''}"></div>
+        </div>`;
+      item.querySelector('.anom-del').addEventListener('click', () => { z.anoms.splice(ai,1); renderAnoms(); updateHead(); });
+      item.querySelector('.a-pk').addEventListener('input', e => { a.pk = e.target.value; updateHead(); });
+      item.querySelector('.a-nature').addEventListener('input', e => { a.nature = e.target.value; });
+      item.querySelector('.a-sev').addEventListener('change', e => { a.sev = e.target.value; });
+      item.querySelector('.a-com').addEventListener('input', e => { a.com = e.target.value; });
+      anomList.appendChild(item);
+    });
+  }
+  renderAnoms();
+  const anomAddBtn = document.createElement('button');
+  anomAddBtn.className = 'anom-add';
+  anomAddBtn.textContent = '＋ Ajouter une anomalie';
+  anomAddBtn.addEventListener('click', () => {
+    if (!z.anoms) z.anoms = [];
+    z.anoms.push({pk:'',nature:'',sev:'',com:''});
+    renderAnoms(); updateHead();
+  });
+  body.appendChild(anomAddBtn);
+
+  // SÉPARATEUR PHOTOS
+  div(body,'📷 Photos');
+  const photoGrid = document.createElement('div');
+  photoGrid.className = 'photo-grid';
+
+  // Two hidden inputs: camera capture + gallery import
+  const photoCapIn = document.createElement('input');
+  photoCapIn.type = 'file'; photoCapIn.className = 'photo-in';
+  photoCapIn.accept = 'image/*'; photoCapIn.capture = 'environment';
+
+  const photoImpIn = document.createElement('input');
+  photoImpIn.type = 'file'; photoImpIn.className = 'photo-in';
+  photoImpIn.accept = 'image/*'; photoImpIn.multiple = true;
+
+  function loadPhotoFile(file) {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      if (!z.photos) z.photos = [];
+      const ts = new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+      z.photos.push({name: `Photo ${ts}`, data: ev.target.result});
+      renderPhotos(); updateHead();
+    };
+    reader.readAsDataURL(file);
+  }
+  photoCapIn.addEventListener('change', e => { if(e.target.files[0]) loadPhotoFile(e.target.files[0]); e.target.value=''; });
+  photoImpIn.addEventListener('change', e => { [...e.target.files].forEach(loadPhotoFile); e.target.value=''; });
+
+  // Action buttons row
+  const photoBtns = document.createElement('div');
+  photoBtns.className = 'gps-actions';
+  const btnCam = document.createElement('button');
+  btnCam.className = 'gps-locate'; btnCam.innerHTML = '📷 Prendre photo';
+  btnCam.addEventListener('click', () => photoCapIn.click());
+  const btnImp = document.createElement('button');
+  btnImp.className = 'gps-add-btn'; btnImp.innerHTML = '📁 Importer';
+  btnImp.addEventListener('click', () => photoImpIn.click());
+  photoBtns.appendChild(btnCam); photoBtns.appendChild(btnImp);
+
+  const photoWrap = document.createElement('div');
+  photoWrap.className = 'photo-wrap';
+  photoWrap.appendChild(photoGrid);
+  photoWrap.appendChild(photoCapIn);
+  photoWrap.appendChild(photoImpIn);
+  photoWrap.appendChild(photoBtns);
+  body.appendChild(photoWrap);
+
+  function renderPhotos() {
+    photoGrid.innerHTML = '';
+    (z.photos||[]).forEach((p, pi) => {
+      const th = document.createElement('div');
+      th.className = 'photo-thumb';
+      const img = document.createElement('img'); img.src = p.data; img.alt = p.name;
+      const cap = document.createElement('div'); cap.className = 'photo-cap'; cap.textContent = p.name;
+      const del = document.createElement('button'); del.className = 'photo-del'; del.textContent = '×';
+      del.addEventListener('click', e => { e.stopPropagation(); z.photos.splice(pi,1); renderPhotos(); updateHead(); });
+      img.addEventListener('click', () => openLB(p.data, p.name));
+      th.appendChild(img); th.appendChild(cap); th.appendChild(del);
+      photoGrid.appendChild(th);
+    });
+  }
+  renderPhotos();
+
+  // SÉPARATEUR GPS
+  div(body,'📍 Points GPS');
+  const gpsList = document.createElement('div');
+  gpsList.className = 'gps-list';
+  body.appendChild(gpsList);
+  const gpsActions = document.createElement('div');
+  gpsActions.className = 'gps-actions';
+  const gpsAddBtn = document.createElement('button');
+  gpsAddBtn.className = 'gps-add-btn'; gpsAddBtn.textContent = '✏ Saisir coords';
+  gpsAddBtn.addEventListener('click', () => {
+    if (!z.gps) z.gps = [];
+    z.gps.push({lat:'',lon:'',label:''}); renderGps(); updateHead();
+    gpsList.lastElementChild?.querySelector('.g-lat')?.focus();
+  });
+  const gpsLocBtn = document.createElement('button');
+  gpsLocBtn.className = 'gps-locate'; gpsLocBtn.textContent = '📍 Capturer GPS';
+  gpsLocBtn.addEventListener('click', () => {
+    if (!navigator.geolocation) { alert('Géolocalisation non disponible sur cet appareil'); return; }
+    gpsLocBtn.textContent = '⏳ Acquisition…';
+    gpsLocBtn.disabled = true;
+    navigator.geolocation.getCurrentPosition(pos => {
+      gpsLocBtn.textContent = '📍 Capturer GPS';
+      gpsLocBtn.disabled = false;
+      if (!z.gps) z.gps = [];
+      const acc = pos.coords.accuracy ? ` (±${Math.round(pos.coords.accuracy)}m)` : '';
+      const ts  = new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+      z.gps.push({
+        lat: pos.coords.latitude.toFixed(6),
+        lon: pos.coords.longitude.toFixed(6),
+        label: `Capture ${ts}${acc}`
+      });
+      renderGps(); updateHead();
+      showStatus('📍 Position capturée' + acc);
+    }, err => {
+      gpsLocBtn.textContent = '📍 Capturer GPS';
+      gpsLocBtn.disabled = false;
+      const msgs = {1:'Accès refusé — autoriser la localisation',2:'Position indisponible',3:'Délai dépassé'};
+      alert('Erreur GPS : ' + (msgs[err.code] || err.message));
+    }, {enableHighAccuracy: true, timeout: 15000, maximumAge: 0});
+  });
+  gpsActions.appendChild(gpsAddBtn); gpsActions.appendChild(gpsLocBtn);
+  body.appendChild(gpsActions);
+
+  function renderGps() {
+    gpsList.innerHTML = '';
+    (z.gps||[]).forEach((g, gi) => {
+      const row = document.createElement('div');
+      row.className = 'gps-row';
+      row.innerHTML = `
+        <span class="gps-idx">P${gi+1}</span>
+        <input type="text" class="g-lat" placeholder="Lat." value="${g.lat||''}" title="Latitude">
+        <input type="text" class="g-lon" placeholder="Lon." value="${g.lon||''}" title="Longitude">
+        <input type="text" class="g-lbl gps-lbl" placeholder="Libellé (début zone, anomalie…)" value="${g.label||''}">
+        <button class="gps-del">×</button>`;
+      row.querySelector('.g-lat').addEventListener('input', e => g.lat = e.target.value);
+      row.querySelector('.g-lon').addEventListener('input', e => g.lon = e.target.value);
+      row.querySelector('.g-lbl').addEventListener('input', e => g.label = e.target.value);
+      row.querySelector('.gps-del').addEventListener('click', () => { z.gps.splice(gi,1); renderGps(); updateHead(); });
+      // copy coords
+      const copyBtn = document.createElement('button');
+      copyBtn.className = 'gps-copy'; copyBtn.title = 'Copier les coordonnées';
+      copyBtn.textContent = '⎘';
+      copyBtn.addEventListener('click', () => {
+        if (g.lat && g.lon) navigator.clipboard?.writeText(`${g.lat}, ${g.lon}`).then(()=>showStatus('✓ Copié'));
+      });
+      row.appendChild(copyBtn);
+      gpsList.appendChild(row);
+    });
+  }
+  renderGps();
+
+  // COMMENTAIRES ZONE
+  div(body,'💬 Commentaires');
+  addTextarea(body,'Observations générales','z-com',z.com||'','Remarques, conditions particulières…');
+
+  // BOUTON SUPPRIMER (en bas du body)
+  const delBtn = document.createElement('button');
+  delBtn.className = 'zone-del-btn';
+  delBtn.textContent = '🗑 Supprimer cette zone';
+  delBtn.addEventListener('click', () => {
+    if (confirm(`Supprimer la zone Z${z._idx} (${z.pk_deb||'?'} → ${z.pk_fin||'?'}) ?\nCette action est irréversible.`)) {
+      zones = zones.filter(x => x.id !== z.id);
+      renderZones();
+    }
+  });
+  body.appendChild(delBtn);
+
+  // Live sync
+  body.addEventListener('input', () => syncZone(card, z));
+  body.addEventListener('change', () => syncZone(card, z));
+
+  function updateHead() {
+    head.querySelector('.ztitle').textContent = zTitle(z);
+    head.querySelector('.znum').textContent = `Z${z._idx}`;
+    updateZoneSummary();
+  }
+  return card;
+}
+
+function zTitle(z) {
+  const parts = [];
+  if (z.pk_deb || z.pk_fin) parts.push(`${z.pk_deb||'?'} → ${z.pk_fin||'?'}`);
+  if (z.prio) parts.push(PRIO[z.prio]||'');
+  if ((z.anoms||[]).length) parts.push(`⚠${z.anoms.length}`);
+  if ((z.photos||[]).length) parts.push(`📷${z.photos.length}`);
+  return parts.join('  ') || '(zone sans titre)';
+}
+
+function syncZone(card, z) {
+  z.pk_deb    = v(card,'.z-pk-deb');    z.pk_fin    = v(card,'.z-pk-fin');
+  z.op        = v(card,'.z-op');
+  z.pk_gps_deb= v(card,'.z-pk-gps-deb'); z.pk_gps_fin= v(card,'.z-pk-gps-fin');
+  z.h_deb     = v(card,'.z-h-deb');     z.h_fin     = v(card,'.z-h-fin');
+  z.prio      = v(card,'.z-prio');      z.qual      = v(card,'.z-qual');
+  z.db        = v(card,'.z-db');        z.pres      = v(card,'.z-pres');
+  z.meteo     = v(card,'.z-meteo');     z.vent      = v(card,'.z-vent');
+  z.bruit     = v(card,'.z-bruit');     z.eau       = v(card,'.z-eau');
+  z.acces     = v(card,'.z-acces');     z.cond_rem  = v(card,'.z-cond-rem');
+  z.com       = v(card,'.z-com');
+  card.querySelector('.zc-head .ztitle').textContent = zTitle(z);
+  updateZoneSummary();
+}
+function v(el, sel) { const e = el.querySelector(sel); return e ? e.value : ''; }
+
+function renderZones() {
+  const list = document.getElementById('zone-list');
+  list.innerHTML = '';
+  zones.forEach((z,i) => { z._idx = i+1; list.appendChild(makeZone(z)); });
+  updateZoneSummary();
+}
+
+function updateZoneSummary() {
+  const badge = document.getElementById('zone-badge');
+  const sum   = document.getElementById('zone-summary');
+  const c = {'1':0,'2':0,'3':0}; let anoms=0, photos=0, gpts=0;
+  zones.forEach(z => {
+    if(c[z.prio]!==undefined) c[z.prio]++;
+    anoms  += (z.anoms ||[]).length;
+    photos += (z.photos||[]).length;
+    gpts   += (z.gps   ||[]).length;
+  });
+  badge.textContent = `${zones.length} zone${zones.length>1?'s':''}`;
+  badge.className = 'sh-badge' + (zones.length ? ' ok' : '');
+  sum.innerHTML = zones.length ? `
+    ${c['1']?`<span class="badge b1">🔴 ${c['1']} P1</span>`:''}
+    ${c['2']?`<span class="badge b2">🟡 ${c['2']} P2</span>`:''}
+    ${c['3']?`<span class="badge b3">🟢 ${c['3']} P3</span>`:''}
+    ${anoms ?`<span class="badge ba">⚠ ${anoms} anomalie${anoms>1?'s':''}</span>`:''}
+    ${photos?`<span class="badge" style="background:var(--acc2);color:var(--acc);border:1px solid var(--acc)">📷 ${photos}</span>`:''}
+    ${gpts  ?`<span class="badge" style="background:var(--ok2);color:var(--ok);border:1px solid var(--okb)">📍 ${gpts}</span>`:''}
+  ` : '';
+}
+
+function addZone(data={}) {
+  zIdCtr++;
+  zones.push({
+    id:zIdCtr, _idx:zones.length+1,
+    pk_deb:data.pk_deb||'', pk_fin:data.pk_fin||'',
+    op:data.op||'',
+    pk_gps_deb:data.pk_gps_deb||'', pk_gps_fin:data.pk_gps_fin||'',
+    h_deb:data.h_deb||'', h_fin:data.h_fin||'',
+    prio:data.prio||'2',
+    qual:data.qual||'', db:data.db||'', pres:data.pres||'oui',
+    meteo:data.meteo||'', vent:data.vent||'', bruit:data.bruit||'',
+    eau:data.eau||'', acces:data.acces||'', cond_rem:data.cond_rem||'',
+    anoms: (data.anoms||[]).map(a=>({...a})),
+    photos: (data.photos||[]).map(p=>({...p})),
+    gps: (data.gps||[]).map(g=>({...g})),
+    com:data.com||'',
+  });
+  renderZones();
+  // open the new card
+  const cards = document.querySelectorAll('.zone-card');
+  if (cards.length) {
+    const lastHead = cards[cards.length-1].querySelector('.zc-head');
+    if (!lastHead.classList.contains('open')) toggleZoneCard(lastHead);
+  }
+}
+
+document.getElementById('btn-add-zone').addEventListener('click', () => addZone());
+addZone();
+
+// ── helpers for zone body ──
+function field(lbl, cls, type, val, ph) {
+  return {lbl, cls, type, val, ph};
+}
+function selField(lbl, cls, opts, val) {
+  return {lbl, cls, type:'select', opts, val};
+}
+function addRow(parent, fields, rowCls) {
+  const row = document.createElement('div');
+  row.className = rowCls;
+  fields.forEach(f => {
+    const fg = document.createElement('div');
+    fg.className = 'fg';
+    const lbl = document.createElement('label'); lbl.textContent = f.lbl;
+    fg.appendChild(lbl);
+    if (f.type === 'select') {
+      const sel = document.createElement('select');
+      sel.className = f.cls;
+      Object.entries(f.opts).forEach(([v,t]) => {
+        const o = document.createElement('option'); o.value = v; o.textContent = t;
+        if (v === (f.val||'')) o.selected = true;
+        sel.appendChild(o);
+      });
+      fg.appendChild(sel);
+    } else {
+      const inp = document.createElement('input');
+      inp.type = f.type; inp.className = f.cls;
+      inp.value = f.val||''; inp.placeholder = f.ph||'';
+      fg.appendChild(inp);
+    }
+    row.appendChild(fg);
+  });
+  parent.appendChild(row);
+}
+function addTextarea(parent, lbl, cls, val, ph) {
+  const fg = document.createElement('div'); fg.className = 'fg';
+  const l = document.createElement('label'); l.textContent = lbl; fg.appendChild(l);
+  const ta = document.createElement('textarea'); ta.className = cls; ta.rows = 2; ta.value = val; ta.placeholder = ph;
+  fg.appendChild(ta); parent.appendChild(fg);
+}
+function div(parent, label) {
+  const d = document.createElement('div'); d.className = 'zdiv';
+  const s = document.createElement('span'); s.textContent = label;
+  d.appendChild(s); parent.appendChild(d);
+}
+
+// ═══════════════════════════════════
+//  SAVE / LOAD
+// ═══════════════════════════════════
+const TXT_FIELDS = [
+  'ref-pfx','ref-num','ref-source-autre','ref-doc-pk',
+  'date','site','secteur','surveillant','prestataire','chef-equipe',
+  'obs-personnel','obs-materiel','com-sec','com-acou',
+  'ecarts-desc','action-corrective','diff-autre-txt','synthese',
+  'visa-surv','visa-heure'
+];
+
+function collectData() {
+  const d = {_v:4, _ts:new Date().toISOString()};
+  TXT_FIELDS.forEach(id => { const el=document.getElementById(id); if(el) d[id]=el.value; });
+  d['ref-source-pk'] = document.getElementById('ref-source-pk')?.value;
+  d.ynState   = {...ynState};
+  d.radios    = {...radios};
+  d.diffChecks= [...diffChecks];
+  d.avis      = avis;
+  d.zones     = zones.map(z => ({...z, anoms:(z.anoms||[]).map(a=>({...a})), photos:(z.photos||[]).map(p=>({...p})), gps:(z.gps||[]).map(g=>({...g}))}));
+  return d;
+}
+
+function applyData(d) {
+  TXT_FIELDS.forEach(id => { const el=document.getElementById(id); if(el && d[id]!=null){ el.value=d[id]; el.dispatchEvent(new Event('input')); }});
+  const spk = document.getElementById('ref-source-pk');
+  if (spk && d['ref-source-pk']) { spk.value = d['ref-source-pk']; spk.dispatchEvent(new Event('change')); }
+  if (d.ynState) Object.entries(d.ynState).forEach(([k,v]) => setYN(k,v));
+  if (d.radios) Object.entries(d.radios).forEach(([name,val]) => {
+    const grp = Object.keys({pg_personnel:'personnel',pg_materiel:'materiel',pg_ecarts:'ecarts'}).find(k=>k);
+    document.querySelectorAll(`input[name="${name}"]`).forEach(inp => {
+      if (inp.value === val) {
+        radios[name] = val;
+        const p = inp.closest('.pill');
+        if (p) {
+          const pg = p.parentElement;
+          pg.querySelectorAll('.pill').forEach(x => x.classList.remove('active-ok','active-ko','active-def'));
+          p.classList.add(val==='ok'?'active-ok':val==='ko'?'active-ko':'active-def');
+          if (name==='ecarts') document.getElementById('ecarts-detail').style.display = val==='oui'?'block':'none';
+        }
+      }
+    });
+  });
+  if (d.diffChecks) {
+    diffChecks.clear();
+    document.querySelectorAll('[data-val]').forEach(p => p.classList.remove('active-def'));
+    d.diffChecks.forEach(val => {
+      diffChecks.add(val);
+      const el = document.querySelector(`[data-val="${val}"]`);
+      if (el) el.classList.add('active-def');
+    });
+  }
+  if (d.avis) { avis = d.avis; document.querySelector(`.avis-btn[data-avis="${d.avis}"]`)?.click(); }
+  if (d.zones) {
+    zones = []; zIdCtr = 0;
+    d.zones.forEach(z => addZone(z));
+  }
+  if (d['ref-num']) setRef(d['ref-num']);
+  if (d['ref-pfx']) { savePfx(d['ref-pfx']); document.getElementById('ref-pfx').value = d['ref-pfx']; }
+  updateZoneSummary();
+}
+
+document.getElementById('btn-save').addEventListener('click', () => {
+  const d = collectData();
+  const blob = new Blob([JSON.stringify(d,null,2)],{type:'application/json'});
+  const a = document.createElement('a');
+  const ds = (d['date']||'').replace(/-/g,'')||'XXXXXXXX';
+  const s  = (d['site']||'site').replace(/[^a-zA-Z0-9]/g,'_').substring(0,14);
+  a.download = `${d['ref-num']||'FSP'}_${ds}_${s}.json`;
+  a.href = URL.createObjectURL(blob); a.click();
+  showStatus('✓ Sauvegardé');
+});
+document.getElementById('btn-load').addEventListener('click', () => document.getElementById('file-in').click());
+document.getElementById('file-in').addEventListener('change', e => {
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = ev => { try { applyData(JSON.parse(ev.target.result)); showStatus('✓ Chargé'); } catch { alert('JSON invalide'); }};
+  r.readAsText(f); e.target.value = '';
+});
+document.getElementById('btn-new').addEventListener('click', () => {
+  if (!confirm('Réinitialiser la fiche ?')) return;
+  TXT_FIELDS.forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  Object.keys(ynState).forEach(k => setYN(k,null));
+  document.querySelectorAll('.pill').forEach(p => p.classList.remove('active-ok','active-ko','active-def'));
+  document.querySelectorAll('.avis-btn').forEach(b => b.classList.remove('a-ok','a-rem','a-ko'));
+  diffChecks.clear(); avis=null;
+  document.getElementById('ecarts-detail').style.display='none';
+  zones=[]; zIdCtr=0; addZone();
+  setRef(buildRef(getPfx()));
+  showStatus('✓ Nouvelle fiche');
+});
+document.getElementById('btn-pdf').addEventListener('click', () => window.print());
+
+function showStatus(msg) {
+  const el = document.getElementById('tb-status');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'), 2500);
+}
+
+// ═══════════════════════════════════
+//  INIT
+// ═══════════════════════════════════
+initRef();
+const today = new Date();
+document.getElementById('date').value =
+  `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+</script>
+</body>
+</html>
